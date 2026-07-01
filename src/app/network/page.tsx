@@ -1,14 +1,16 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
 import { RootState } from "@/redux/store";
+import { fetchDirectory } from "@/redux/slices/authSlice";
 import Header from "@/components/Header/Header";
 import styles from "./network.module.css";
 
 export default function NetworkPage() {
   const router = useRouter();
+  const dispatch = useDispatch();
   const { currentUser, users } = useSelector((state: RootState) => state.auth);
   const [mounted, setMounted] = useState(false);
   const [connectedIds, setConnectedIds] = useState<string[]>([]);
@@ -16,6 +18,13 @@ export default function NetworkPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Fetch Directory of users
+  useEffect(() => {
+    if (mounted && currentUser) {
+      dispatch(fetchDirectory() as any);
+    }
+  }, [mounted, currentUser, dispatch]);
 
   useEffect(() => {
     if (mounted && !currentUser) {
@@ -31,7 +40,7 @@ export default function NetworkPage() {
     );
   }
 
-  // Filter out the logged-in user
+  // Filter out the logged-in user (as precaution, though backend already excludes it)
   const otherUsers = users.filter((u) => u.id !== currentUser.id);
 
   const handleConnect = (id: string) => {

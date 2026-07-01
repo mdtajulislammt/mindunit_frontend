@@ -47,8 +47,7 @@ export default function Comments({ postId, comments }: CommentsProps) {
       addCommentToPost({
         postId,
         content: commentText,
-        author: currentUser,
-      })
+      }) as any
     );
     setCommentText("");
   };
@@ -62,8 +61,7 @@ export default function Comments({ postId, comments }: CommentsProps) {
         postId,
         commentId,
         content: replyText,
-        author: currentUser,
-      })
+      }) as any
     );
     setReplyText("");
     setActiveReplyId(null);
@@ -129,7 +127,7 @@ export default function Comments({ postId, comments }: CommentsProps) {
                           postId,
                           commentId: comment.id,
                           userId: currentUser.id,
-                        })
+                        }) as any
                       )
                     }
                   >
@@ -182,7 +180,7 @@ export default function Comments({ postId, comments }: CommentsProps) {
                                       commentId: comment.id,
                                       replyId: reply.id,
                                       userId: currentUser.id,
-                                    })
+                                    }) as any
                                   )
                                 }
                               >

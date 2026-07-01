@@ -25,6 +25,7 @@ export default function PostCard({ post }: PostCardProps) {
 
   // Map user details who liked the post
   const likedUsersDetails = post.likes.map((likeUserId) => {
+    if (likeUserId === currentUser.id) return currentUser;
     return users.find((u) => u.id === likeUserId);
   }).filter(Boolean);
 
@@ -102,7 +103,7 @@ export default function PostCard({ post }: PostCardProps) {
       <div className={styles.actionsRow}>
         <button
           className={`${styles.actionBtn} ${isLiked ? styles.activeLikeBtn : ""}`}
-          onClick={() => dispatch(toggleLikePost({ postId: post.id, userId: currentUser.id }))}
+          onClick={() => dispatch(toggleLikePost({ postId: post.id, userId: currentUser.id }) as any)}
         >
           <ThumbsUp size={18} fill={isLiked ? "var(--primary-color)" : "none"} />
           <span>Like</span>

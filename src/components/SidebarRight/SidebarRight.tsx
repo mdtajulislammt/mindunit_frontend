@@ -39,7 +39,7 @@ export default function SidebarRight() {
 
               <button
                 className={`${styles.joinBtn} ${group.isJoined ? styles.joinedBtn : ""}`}
-                onClick={() => dispatch(toggleJoinGroup(group.id))}
+                onClick={() => dispatch(toggleJoinGroup(group.id) as any)}
               >
                 {group.isJoined ? "Joined" : "Join"}
               </button>

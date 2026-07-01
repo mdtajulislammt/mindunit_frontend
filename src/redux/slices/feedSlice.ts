@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { User } from "./authSlice";
 
 export interface Reply {
@@ -31,203 +31,346 @@ export interface Post {
 
 interface FeedState {
   posts: Post[];
+  loading: boolean;
+  error: string | null;
 }
 
-// Generate the "Design Tokens" chart SVG matching the user's provided mockup
-const designTokensSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 550" width="100%" height="100%" style="background:%23f8fafc; border-radius:12px; font-family:'Comic Sans MS', cursive, sans-serif;"><rect width="500" height="550" fill="%23ffffff" rx="12" stroke="%23e2e8f0" stroke-width="1"/><text x="250" y="50" font-size="28" font-weight="800" fill="%23008051" text-anchor="middle">Design Tokens</text><g transform="translate(100, 90)"><rect width="300" height="45" rx="6" fill="%23008051" /><text x="15" y="28" font-size="14" font-weight="bold" fill="white">%23008051</text><text x="285" y="28" font-size="14" font-weight="bold" fill="white" text-anchor="end">Value</text></g><path d="M 250 135 L 250 170" stroke="%2394a3b8" stroke-dasharray="4 4" stroke-width="2" marker-end="url(%23arrow)"/><g transform="translate(100, 170)"><rect width="300" height="45" rx="6" fill="%23e6f3ee" stroke="%23008051" stroke-width="1" /><text x="15" y="28" font-size="14" font-weight="bold" fill="%23008051">green-500</text><text x="285" y="28" font-size="12" fill="%2364748b" text-anchor="end">Global Token</text></g><path d="M 250 215 L 250 250" stroke="%2394a3b8" stroke-dasharray="4 4" stroke-width="2"/><g transform="translate(100, 250)"><rect width="300" height="45" rx="6" fill="%23e6f2f1" stroke="%23008077" stroke-width="1" /><text x="15" y="28" font-size="14" font-weight="bold" fill="%23008077">accent-color-900</text><text x="285" y="28" font-size="12" fill="%2364748b" text-anchor="end">Alias Token</text></g><path d="M 250 295 L 250 330" stroke="%2394a3b8" stroke-dasharray="4 4" stroke-width="2"/><g transform="translate(100, 330)"><rect width="300" height="45" rx="6" fill="%23f1f5f9" stroke="%23cbd5e1" stroke-width="1" /><text x="15" y="28" font-size="13" font-weight="600" fill="%23475569">accent-background-color-default</text></g><path d="M 250 375 L 250 410" stroke="%2394a3b8" stroke-dasharray="4 4" stroke-width="2"/><g transform="translate(175, 410)"><rect width="150" height="40" rx="20" fill="%23008051" /><text x="75" y="25" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Button</text></g><text x="250" y="485" font-size="12" fill="%2394a3b8" text-anchor="middle">Component Specific Token</text><defs><marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="%2394a3b8"/></marker></defs></svg>`;
-
-const initialPosts: Post[] = [
-  {
-    id: "post-1",
-    author: {
-      id: "user-1",
-      firstName: "Sarah",
-      lastName: "Rahman",
-      email: "sarah@mindunite.org",
-      headline: "Cognitive Neuroscientist | Professor at DU | Brain Research lead",
-      avatarUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><rect width="100" height="100" fill="%23008051"/><text x="50" y="55" font-family="'Comic Sans MS', cursive, sans-serif" font-size="36" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="middle">SR</text></svg>`,
-      connectionsCount: 342,
-    },
-    content: "Excited to share the updated design token mapping for the MindUnite components! Implementing a unified token structure allows us to build a highly customizable and themeable UI system easily. Take a look at the relationship mapping below:",
-    imageUrl: designTokensSvg,
-    privacy: "public",
-    createdAt: new Date(Date.now() - 9 * 60 * 60 * 1000).toISOString(), // 9h ago
-    likes: ["user-2", "user-3"],
-    comments: [
-      {
-        id: "comment-1",
-        author: {
-          id: "user-2",
-          firstName: "Rahat",
-          lastName: "Islam",
-          email: "rahat@mindunite.org",
-          headline: "Psychology Student at RU | Aspiring Neuro-therapist",
-          avatarUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><rect width="100" height="100" fill="%230a7e8c"/><text x="50" y="55" font-family="'Comic Sans MS', cursive, sans-serif" font-size="36" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="middle">RI</text></svg>`,
-          connectionsCount: 89,
-        },
-        content: "This makes so much sense, Dr. Sarah! It simplifies how components resolve dynamic styling properties. Really clean diagram.",
-        createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-        likes: ["user-1"],
-        replies: [
-          {
-            id: "reply-1",
-            author: {
-              id: "user-1",
-              firstName: "Sarah",
-              lastName: "Rahman",
-              email: "sarah@mindunite.org",
-              headline: "Cognitive Neuroscientist | Professor at DU | Brain Research lead",
-              avatarUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><rect width="100" height="100" fill="%23008051"/><text x="50" y="55" font-family="'Comic Sans MS', cursive, sans-serif" font-size="36" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="middle">SR</text></svg>`,
-              connectionsCount: 342,
-            },
-            content: "Thanks, Rahat! The next step is mapping these variables inside our Tailwind-free CSS variables system directly.",
-            createdAt: new Date(Date.now() - 7.5 * 60 * 60 * 1000).toISOString(),
-            likes: ["user-2"],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "post-2",
-    author: {
-      id: "user-3",
-      firstName: "Fahmida",
-      lastName: "Yeasmin",
-      email: "fahmida@mindunite.org",
-      headline: "Clinical Psychologist | Mental Health Counselor & Wellness Coach",
-      avatarUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><rect width="100" height="100" fill="%238c0a5b"/><text x="50" y="55" font-family="'Comic Sans MS', cursive, sans-serif" font-size="36" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="middle">FY</text></svg>`,
-      connectionsCount: 195,
-    },
-    content: "Quick reminder: mindfulness isn't about clearing your mind completely. It's about developing a new relationship with your thoughts—one of non-judgmental observation. Try taking 3 conscious breaths next time you feel overwhelmed today. 🧠✨",
-    privacy: "public",
-    createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // 12h ago
-    likes: ["user-1"],
-    comments: [],
-  },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5001/api";
 
 const initialState: FeedState = {
-  posts: initialPosts,
+  posts: [],
+  loading: false,
+  error: null,
 };
+
+// Base64 helper
+function dataURLtoBlob(dataurl: string) {
+  const arr = dataurl.split(",");
+  const mime = arr[0].match(/:(.*?);/)?.[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+}
+
+// Async Thunks
+export const fetchPosts = createAsyncThunk(
+  "feed/fetchPosts",
+  async (_, { getState, rejectWithValue }) => {
+    const state = getState() as any;
+    const token = state.auth.token;
+    if (!token) return rejectWithValue("No authentication token available");
+
+    try {
+      const response = await fetch(`${API_BASE}/posts`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return rejectWithValue(data.message || "Failed to fetch posts");
+      }
+      return data; // list of posts
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Server error fetching feed");
+    }
+  }
+);
+
+export const createPost = createAsyncThunk(
+  "feed/createPost",
+  async (
+    payload: { content: string; privacy: "public" | "private"; image?: string | null },
+    { getState, rejectWithValue }
+  ) => {
+    const state = getState() as any;
+    const token = state.auth.token;
+    if (!token) return rejectWithValue("No authentication token available");
+
+    try {
+      const formData = new FormData();
+      formData.append("content", payload.content);
+      formData.append("privacy", payload.privacy);
+
+      if (payload.image) {
+        const blob = dataURLtoBlob(payload.image);
+        formData.append("image", blob, "post_image.png");
+      }
+
+      const response = await fetch(`${API_BASE}/posts`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        return rejectWithValue(data.message || "Failed to create post");
+      }
+      return data; // returns newly created post
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Server error creating post");
+    }
+  }
+);
+
+export const toggleLikePost = createAsyncThunk(
+  "feed/toggleLikePost",
+  async (payload: { postId: string; userId: string }, { getState, rejectWithValue }) => {
+    const state = getState() as any;
+    const token = state.auth.token;
+    if (!token) return rejectWithValue("No authentication token available");
+
+    try {
+      const response = await fetch(`${API_BASE}/posts/${payload.postId}/like`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return rejectWithValue(data.message || "Failed to toggle post like");
+      }
+      return { postId: payload.postId, userId: payload.userId, liked: data.liked };
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Server error liking post");
+    }
+  }
+);
+
+export const addCommentToPost = createAsyncThunk(
+  "feed/addComment",
+  async (payload: { postId: string; content: string }, { getState, rejectWithValue }) => {
+    const state = getState() as any;
+    const token = state.auth.token;
+    if (!token) return rejectWithValue("No authentication token available");
+
+    try {
+      const response = await fetch(`${API_BASE}/posts/${payload.postId}/comments`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content: payload.content }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return rejectWithValue(data.message || "Failed to add comment");
+      }
+      return { postId: payload.postId, comment: data };
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Server error adding comment");
+    }
+  }
+);
+
+export const addReplyToComment = createAsyncThunk(
+  "feed/addReply",
+  async (
+    payload: { postId: string; commentId: string; content: string },
+    { getState, rejectWithValue }
+  ) => {
+    const state = getState() as any;
+    const token = state.auth.token;
+    if (!token) return rejectWithValue("No authentication token available");
+
+    try {
+      const response = await fetch(
+        `${API_BASE}/posts/${payload.postId}/comments/${payload.commentId}/replies`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ content: payload.content }),
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        return rejectWithValue(data.message || "Failed to add reply");
+      }
+      return { postId: payload.postId, commentId: payload.commentId, reply: data };
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Server error adding reply");
+    }
+  }
+);
+
+export const toggleLikeComment = createAsyncThunk(
+  "feed/toggleLikeComment",
+  async (
+    payload: { postId: string; commentId: string; userId: string },
+    { getState, rejectWithValue }
+  ) => {
+    const state = getState() as any;
+    const token = state.auth.token;
+    if (!token) return rejectWithValue("No authentication token available");
+
+    try {
+      const response = await fetch(`${API_BASE}/comments/${payload.commentId}/like`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return rejectWithValue(data.message || "Failed to toggle comment like");
+      }
+      return {
+        postId: payload.postId,
+        commentId: payload.commentId,
+        userId: payload.userId,
+        liked: data.liked,
+      };
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Server error liking comment");
+    }
+  }
+);
+
+export const toggleLikeReply = createAsyncThunk(
+  "feed/toggleLikeReply",
+  async (
+    payload: { postId: string; commentId: string; replyId: string; userId: string },
+    { getState, rejectWithValue }
+  ) => {
+    const state = getState() as any;
+    const token = state.auth.token;
+    if (!token) return rejectWithValue("No authentication token available");
+
+    try {
+      const response = await fetch(`${API_BASE}/replies/${payload.replyId}/like`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return rejectWithValue(data.message || "Failed to toggle reply like");
+      }
+      return {
+        postId: payload.postId,
+        commentId: payload.commentId,
+        replyId: payload.replyId,
+        userId: payload.userId,
+        liked: data.liked,
+      };
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Server error liking reply");
+    }
+  }
+);
 
 const feedSlice = createSlice({
   name: "feed",
   initialState,
-  reducers: {
-    addPost: (
-      state,
-      action: PayloadAction<{ content: string; imageUrl?: string; privacy: "public" | "private"; author: User }>
-    ) => {
-      const { content, imageUrl, privacy, author } = action.payload;
-      const newPost: Post = {
-        id: `post-${Date.now()}`,
-        author,
-        content,
-        imageUrl,
-        privacy,
-        createdAt: new Date().toISOString(),
-        likes: [],
-        comments: [],
-      };
-      state.posts.unshift(newPost); // Newest First
-    },
-    toggleLikePost: (state, action: PayloadAction<{ postId: string; userId: string }>) => {
-      const { postId, userId } = action.payload;
-      const post = state.posts.find((p) => p.id === postId);
-      if (post) {
-        const likeIndex = post.likes.indexOf(userId);
-        if (likeIndex > -1) {
-          post.likes.splice(likeIndex, 1); // Unlike
-        } else {
-          post.likes.push(userId); // Like
-        }
-      }
-    },
-    addCommentToPost: (
-      state,
-      action: PayloadAction<{ postId: string; content: string; author: User }>
-    ) => {
-      const { postId, content, author } = action.payload;
-      const post = state.posts.find((p) => p.id === postId);
-      if (post) {
-        const newComment: Comment = {
-          id: `comment-${Date.now()}`,
-          author,
-          content,
-          createdAt: new Date().toISOString(),
-          likes: [],
-          replies: [],
-        };
-        post.comments.push(newComment);
-      }
-    },
-    toggleLikeComment: (state, action: PayloadAction<{ postId: string; commentId: string; userId: string }>) => {
-      const { postId, commentId, userId } = action.payload;
-      const post = state.posts.find((p) => p.id === postId);
-      if (post) {
-        const comment = post.comments.find((c) => c.id === commentId);
-        if (comment) {
-          const likeIndex = comment.likes.indexOf(userId);
-          if (likeIndex > -1) {
-            comment.likes.splice(likeIndex, 1);
-          } else {
-            comment.likes.push(userId);
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      // Fetch Posts
+      .addCase(fetchPosts.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchPosts.fulfilled, (state, action) => {
+        state.loading = false;
+        state.posts = action.payload;
+      })
+      .addCase(fetchPosts.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+
+      // Create Post
+      .addCase(createPost.fulfilled, (state, action) => {
+        state.posts.unshift(action.payload);
+      })
+
+      // Toggle Like Post
+      .addCase(toggleLikePost.fulfilled, (state, action) => {
+        const { postId, userId, liked } = action.payload;
+        const post = state.posts.find((p) => p.id === postId);
+        if (post) {
+          const index = post.likes.indexOf(userId);
+          if (liked && index === -1) {
+            post.likes.push(userId);
+          } else if (!liked && index > -1) {
+            post.likes.splice(index, 1);
           }
         }
-      }
-    },
-    addReplyToComment: (
-      state,
-      action: PayloadAction<{ postId: string; commentId: string; content: string; author: User }>
-    ) => {
-      const { postId, commentId, content, author } = action.payload;
-      const post = state.posts.find((p) => p.id === postId);
-      if (post) {
-        const comment = post.comments.find((c) => c.id === commentId);
-        if (comment) {
-          const newReply: Reply = {
-            id: `reply-${Date.now()}`,
-            author,
-            content,
-            createdAt: new Date().toISOString(),
-            likes: [],
-          };
-          comment.replies.push(newReply);
+      })
+
+      // Add Comment
+      .addCase(addCommentToPost.fulfilled, (state, action) => {
+        const { postId, comment } = action.payload;
+        const post = state.posts.find((p) => p.id === postId);
+        if (post) {
+          if (!post.comments) post.comments = [];
+          post.comments.push(comment);
         }
-      }
-    },
-    toggleLikeReply: (
-      state,
-      action: PayloadAction<{ postId: string; commentId: string; replyId: string; userId: string }>
-    ) => {
-      const { postId, commentId, replyId, userId } = action.payload;
-      const post = state.posts.find((p) => p.id === postId);
-      if (post) {
-        const comment = post.comments.find((c) => c.id === commentId);
-        if (comment) {
-          const reply = comment.replies.find((r) => r.id === replyId);
-          if (reply) {
-            const likeIndex = reply.likes.indexOf(userId);
-            if (likeIndex > -1) {
-              reply.likes.splice(likeIndex, 1);
-            } else {
-              reply.likes.push(userId);
+      })
+
+      // Add Reply
+      .addCase(addReplyToComment.fulfilled, (state, action) => {
+        const { postId, commentId, reply } = action.payload;
+        const post = state.posts.find((p) => p.id === postId);
+        if (post) {
+          const comment = post.comments?.find((c) => c.id === commentId);
+          if (comment) {
+            if (!comment.replies) comment.replies = [];
+            comment.replies.push(reply);
+          }
+        }
+      })
+
+      // Toggle Like Comment
+      .addCase(toggleLikeComment.fulfilled, (state, action) => {
+        const { postId, commentId, userId, liked } = action.payload;
+        const post = state.posts.find((p) => p.id === postId);
+        if (post) {
+          const comment = post.comments?.find((c) => c.id === commentId);
+          if (comment) {
+            const index = comment.likes.indexOf(userId);
+            if (liked && index === -1) {
+              comment.likes.push(userId);
+            } else if (!liked && index > -1) {
+              comment.likes.splice(index, 1);
             }
           }
         }
-      }
-    },
+      })
+
+      // Toggle Like Reply
+      .addCase(toggleLikeReply.fulfilled, (state, action) => {
+        const { postId, commentId, replyId, userId, liked } = action.payload;
+        const post = state.posts.find((p) => p.id === postId);
+        if (post) {
+          const comment = post.comments?.find((c) => c.id === commentId);
+          if (comment) {
+            const reply = comment.replies?.find((r) => r.id === replyId);
+            if (reply) {
+              const index = reply.likes.indexOf(userId);
+              if (liked && index === -1) {
+                reply.likes.push(userId);
+              } else if (!liked && index > -1) {
+                reply.likes.splice(index, 1);
+              }
+            }
+          }
+        }
+      });
   },
 });
-
-export const {
-  addPost,
-  toggleLikePost,
-  addCommentToPost,
-  toggleLikeComment,
-  addReplyToComment,
-  toggleLikeReply,
-} = feedSlice.actions;
 
 export default feedSlice.reducer;

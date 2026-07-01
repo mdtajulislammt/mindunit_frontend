@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
 import { RootState } from "@/redux/store";
+import { fetchPosts } from "@/redux/slices/feedSlice";
+import { fetchGroups } from "@/redux/slices/groupsSlice";
 import Header from "@/components/Header/Header";
 import SidebarLeft from "@/components/SidebarLeft/SidebarLeft";
 import SidebarRight from "@/components/SidebarRight/SidebarRight";
@@ -13,6 +15,7 @@ import styles from "./feed.module.css";
 
 export default function FeedPage() {
   const router = useRouter();
+  const dispatch = useDispatch();
   const { currentUser } = useSelector((state: RootState) => state.auth);
   const { posts } = useSelector((state: RootState) => state.feed);
   const [mounted, setMounted] = useState(false);
@@ -21,6 +24,14 @@ export default function FeedPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Fetch feed and groups
+  useEffect(() => {
+    if (mounted && currentUser) {
+      dispatch(fetchPosts() as any);
+      dispatch(fetchGroups() as any);
+    }
+  }, [mounted, currentUser, dispatch]);
 
   // Protect route
   useEffect(() => {
@@ -53,13 +64,10 @@ export default function FeedPage() {
     );
   }
 
-  // Filter posts based on privacy permissions:
-  // - Show if post is public
-  // - Show if post is private AND author is the current logged-in user
-  const visiblePosts = posts
-    .filter((post) => post.privacy === "public" || post.author.id === currentUser.id)
-    .slice() // create a copy to prevent mutation errors during sort
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  // Sort visible posts newest first
+  const visiblePosts = [...posts].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
 
   return (
     <div className={styles.feedPageWrapper}>

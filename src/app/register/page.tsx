@@ -53,7 +53,7 @@ export default function RegisterPage() {
       return;
     }
 
-    dispatch(registerUser({ firstName, lastName, email, password }));
+    dispatch(registerUser({ firstName, lastName, email, password }) as any);
   };
 
   return (

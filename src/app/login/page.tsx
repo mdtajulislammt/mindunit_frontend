@@ -40,7 +40,7 @@ export default function LoginPage() {
       return;
     }
 
-    dispatch(loginUser({ email, password }));
+    dispatch(loginUser({ email, password }) as any);
   };
 
   return (

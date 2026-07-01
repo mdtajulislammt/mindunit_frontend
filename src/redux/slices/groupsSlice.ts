@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 
 export interface Group {
   id: string;
@@ -11,65 +11,102 @@ export interface Group {
 
 interface GroupsState {
   list: Group[];
+  loading: boolean;
+  error: string | null;
 }
 
-const initialGroups: Group[] = [
-  {
-    id: "group-1",
-    name: "Figma Product Community",
-    category: "Design & Systems",
-    avatarUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80",
-    isJoined: false,
-    membersCount: 84200,
-  },
-  {
-    id: "group-2",
-    name: "Brain Health Association",
-    category: "Neuroscience",
-    avatarUrl: "https://images.unsplash.com/photo-1559757175-5700dde675bc?w=150&auto=format&fit=crop&q=80",
-    isJoined: true,
-    membersCount: 12450,
-  },
-  {
-    id: "group-3",
-    name: "Clinical Psychologists BD",
-    category: "Mental Health",
-    avatarUrl: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=150&auto=format&fit=crop&q=80",
-    isJoined: false,
-    membersCount: 5630,
-  },
-  {
-    id: "group-4",
-    name: "Cognitive Science Lab",
-    category: "Research",
-    avatarUrl: "https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=150&auto=format&fit=crop&q=80",
-    isJoined: false,
-    membersCount: 2310,
-  },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5001/api";
 
 const initialState: GroupsState = {
-  list: initialGroups,
+  list: [],
+  loading: false,
+  error: null,
 };
+
+// Async Thunks
+export const fetchGroups = createAsyncThunk(
+  "groups/fetchGroups",
+  async (_, { getState, rejectWithValue }) => {
+    const state = getState() as any;
+    const token = state.auth.token;
+    if (!token) return rejectWithValue("No authentication token available");
+
+    try {
+      const response = await fetch(`${API_BASE}/groups`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return rejectWithValue(data.message || "Failed to fetch groups");
+      }
+      return data;
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Server error fetching groups");
+    }
+  }
+);
+
+export const toggleJoinGroup = createAsyncThunk(
+  "groups/toggleJoinGroup",
+  async (groupId: string, { getState, rejectWithValue }) => {
+    const state = getState() as any;
+    const token = state.auth.token;
+    if (!token) return rejectWithValue("No authentication token available");
+
+    try {
+      const response = await fetch(`${API_BASE}/groups/${groupId}/join`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return rejectWithValue(data.message || "Failed to toggle group join");
+      }
+      return { groupId, isJoined: data.isJoined };
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Server error toggling group join");
+    }
+  }
+);
 
 const groupsSlice = createSlice({
   name: "groups",
   initialState,
-  reducers: {
-    toggleJoinGroup: (state, action: PayloadAction<string>) => {
-      const group = state.list.find((g) => g.id === action.payload);
-      if (group) {
-        if (group.isJoined) {
-          group.isJoined = false;
-          group.membersCount -= 1;
-        } else {
-          group.isJoined = true;
-          group.membersCount += 1;
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      // Fetch Groups
+      .addCase(fetchGroups.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchGroups.fulfilled, (state, action) => {
+        state.loading = false;
+        state.list = action.payload;
+      })
+      .addCase(fetchGroups.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+
+      // Toggle Join Group
+      .addCase(toggleJoinGroup.fulfilled, (state, action) => {
+        const { groupId, isJoined } = action.payload;
+        const group = state.list.find((g) => g.id === groupId);
+        if (group) {
+          group.isJoined = isJoined;
+          if (isJoined) {
+            group.membersCount += 1;
+          } else {
+            group.membersCount -= 1;
+          }
         }
-      }
-    },
+      });
   },
 });
 
-export const { toggleJoinGroup } = groupsSlice.actions;
 export default groupsSlice.reducer;

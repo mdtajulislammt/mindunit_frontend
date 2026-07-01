@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 
 export interface User {
   id: string;
@@ -12,134 +12,156 @@ export interface User {
 
 interface AuthState {
   currentUser: User | null;
-  users: (User & { passwordHash: string })[];
+  token: string | null;
+  users: User[]; // directory list
   error: string | null;
+  loading: boolean;
 }
 
-// Default mock avatars using SVG data URIs
-const createAvatar = (initials: string, bgColor: string) => {
-  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><rect width="100" height="100" fill="${encodeURIComponent(bgColor)}"/><text x="50" y="55" font-family="'Comic Sans MS', cursive, sans-serif" font-size="36" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="middle">${initials}</text></svg>`;
-};
-
-const initialMockUsers = [
-  {
-    id: "user-1",
-    firstName: "Sarah",
-    lastName: "Rahman",
-    email: "sarah@mindunite.org",
-    headline: "Cognitive Neuroscientist | Professor at DU | Brain Research lead",
-    avatarUrl: createAvatar("SR", "#008051"),
-    connectionsCount: 342,
-    passwordHash: "123456",
-  },
-  {
-    id: "user-2",
-    firstName: "Rahat",
-    lastName: "Islam",
-    email: "rahat@mindunite.org",
-    headline: "Psychology Student at RU | Aspiring Neuro-therapist | Research Intern",
-    avatarUrl: createAvatar("RI", "#0a7e8c"),
-    connectionsCount: 89,
-    passwordHash: "123456",
-  },
-  {
-    id: "user-3",
-    firstName: "Fahmida",
-    lastName: "Yeasmin",
-    email: "fahmida@mindunite.org",
-    headline: "Clinical Psychologist | Mental Health Counselor & Wellness Coach",
-    avatarUrl: createAvatar("FY", "#8c0a5b"),
-    connectionsCount: 195,
-    passwordHash: "123456",
-  },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5001/api";
 
 const initialState: AuthState = {
   currentUser: null,
-  users: initialMockUsers,
+  token: null,
+  users: [],
   error: null,
+  loading: false,
 };
+
+// Async Thunks
+export const registerUser = createAsyncThunk(
+  "auth/register",
+  async (
+    payload: { firstName: string; lastName: string; email: string; password: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await fetch(`${API_BASE}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return rejectWithValue(data.message || "Registration failed");
+      }
+      return data; // contains user, token, accessToken
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Server error during registration");
+    }
+  }
+);
+
+export const loginUser = createAsyncThunk(
+  "auth/login",
+  async (
+    payload: { email: string; password: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return rejectWithValue(data.message || "Login failed");
+      }
+      return data; // contains user, token, accessToken
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Server error during login");
+    }
+  }
+);
+
+export const fetchDirectory = createAsyncThunk(
+  "auth/fetchDirectory",
+  async (_, { getState, rejectWithValue }) => {
+    const state = getState() as any;
+    const token = state.auth.token;
+    if (!token) return rejectWithValue("No authentication token available");
+
+    try {
+      const response = await fetch(`${API_BASE}/users/directory`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return rejectWithValue(data.message || "Failed to fetch directory");
+      }
+      return data; // returns user list
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Server error fetching directory");
+    }
+  }
+);
 
 const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    registerUser: (
-      state,
-      action: PayloadAction<{ firstName: string; lastName: string; email: string; password: string }>
-    ) => {
-      const { firstName, lastName, email, password } = action.payload;
-      const emailLower = email.toLowerCase();
-      const userExists = state.users.find((u) => u.email.toLowerCase() === emailLower);
-
-      if (userExists) {
-        state.error = "Email is already registered.";
-        return;
-      }
-
-      const initials = (firstName[0] || "") + (lastName[0] || "");
-      // Generate a nice hue based on name length
-      const colors = ["#008051", "#0a7e8c", "#8c0a5b", "#a855f7", "#3b82f6", "#14b8a6", "#f59e0b"];
-      const colorIndex = (firstName.length + lastName.length) % colors.length;
-      const bgColor = colors[colorIndex];
-
-      const newUser = {
-        id: `user-${Date.now()}`,
-        firstName,
-        lastName,
-        email: emailLower,
-        headline: "Brain Health Enthusiast | MindUnite Member",
-        avatarUrl: createAvatar(initials.toUpperCase(), bgColor),
-        connectionsCount: 0,
-        passwordHash: password,
-      };
-
-      state.users.push(newUser);
-      state.currentUser = {
-        id: newUser.id,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
-        email: newUser.email,
-        avatarUrl: newUser.avatarUrl,
-        headline: newUser.headline,
-        connectionsCount: newUser.connectionsCount,
-      };
-      state.error = null;
-    },
-    loginUser: (
-      state,
-      action: PayloadAction<{ email: string; password: string }>
-    ) => {
-      const { email, password } = action.payload;
-      const emailLower = email.toLowerCase();
-      const user = state.users.find(
-        (u) => u.email.toLowerCase() === emailLower && u.passwordHash === password
-      );
-
-      if (user) {
-        state.currentUser = {
-          id: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          avatarUrl: user.avatarUrl,
-          headline: user.headline,
-          connectionsCount: user.connectionsCount,
-        };
-        state.error = null;
-      } else {
-        state.error = "Invalid email or password.";
-      }
-    },
     logoutUser: (state) => {
       state.currentUser = null;
+      state.token = null;
+      state.users = [];
       state.error = null;
+      state.loading = false;
     },
     clearAuthError: (state) => {
       state.error = null;
     },
   },
+  extraReducers: (builder) => {
+    builder
+      // Register
+      .addCase(registerUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(registerUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentUser = action.payload.user;
+        state.token = action.payload.accessToken || action.payload.token;
+        state.error = null;
+      })
+      .addCase(registerUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      
+      // Login
+      .addCase(loginUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(loginUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentUser = action.payload.user;
+        state.token = action.payload.accessToken || action.payload.token;
+        state.error = null;
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+
+      // Fetch Directory
+      .addCase(fetchDirectory.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchDirectory.fulfilled, (state, action) => {
+        state.loading = false;
+        state.users = action.payload;
+      })
+      .addCase(fetchDirectory.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      });
+  },
 });
 
-export const { registerUser, loginUser, logoutUser, clearAuthError } = authSlice.actions;
+export const { logoutUser, clearAuthError } = authSlice.actions;
 export default authSlice.reducer;

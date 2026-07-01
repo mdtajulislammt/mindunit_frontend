@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Image as ImageIcon, Globe, Lock, X, ChevronDown } from "lucide-react";
-import { addPost } from "@/redux/slices/feedSlice";
+import { createPost } from "@/redux/slices/feedSlice";
 import { RootState } from "@/redux/store";
 import styles from "./PostCreator.module.css";
 
@@ -59,12 +59,11 @@ export default function PostCreator() {
     if (!content.trim() && !image) return;
 
     dispatch(
-      addPost({
+      createPost({
         content,
-        imageUrl: image || undefined,
         privacy,
-        author: currentUser,
-      })
+        image,
+      }) as any
     );
 
     setContent("");
