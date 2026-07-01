@@ -1,0 +1,217 @@
+.creatorCard {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.inputSection {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.textarea {
+  flex: 1;
+  border: none;
+  resize: none;
+  font-size: 14px;
+  padding: 8px 0;
+  outline: none;
+  color: var(--text-primary);
+  min-height: 56px;
+  line-height: 1.5;
+}
+
+.textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.previewContainer {
+  position: relative;
+  margin-bottom: 16px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  max-height: 300px;
+}
+
+.previewImage {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+.removeImageBtn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  border-radius: var(--radius-full);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--transition-fast);
+}
+
+.removeImageBtn:hover {
+  background-color: rgba(239, 68, 68, 0.9);
+}
+
+.actionSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border-color);
+  padding-top: 12px;
+}
+
+.leftActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.uploadLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.uploadLabel:hover {
+  background-color: var(--bg-color);
+  color: var(--primary-color);
+}
+
+.fileInput {
+  display: none;
+}
+
+.dropdownWrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdownBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-full);
+  background-color: white;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.dropdownBtn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background-color: #fafafa;
+}
+
+.dropdownBtnActive {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+.dropdownIcon {
+  color: var(--primary-color);
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 50;
+  animation: slideDownDropdown 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+  text-align: left;
+  width: 100%;
+}
+
+.dropdownItem:hover {
+  background-color: var(--bg-color);
+  color: var(--primary-color);
+}
+
+.dropdownItemActive {
+  background-color: var(--primary-light);
+  color: var(--primary-color);
+}
+
+@keyframes slideDownDropdown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.postBtn {
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+  background-color: var(--primary-color);
+  border-radius: var(--radius-full);
+  transition: all var(--transition-fast);
+}
+
+.postBtn:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-0.5px);
+}
+
+.postBtn:disabled {
+  background-color: var(--text-muted);
+  cursor: not-allowed;
+  transform: none;
+}

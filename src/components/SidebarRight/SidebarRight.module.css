@@ -1,0 +1,129 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.groupsCard {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.groupList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.groupItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.groupInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0; /* allows text truncation */
+}
+
+.avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.textContainer {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.members {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.joinBtn {
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1.5px solid var(--primary-color);
+  color: var(--primary-color);
+  border-radius: var(--radius-full);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.joinBtn:hover {
+  background-color: var(--primary-light);
+  transform: translateY(-0.5px);
+}
+
+.joinedBtn {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.joinedBtn:hover {
+  background-color: var(--primary-hover);
+  color: white;
+}
+
+.footer {
+  padding: 0 16px;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  text-align: left;
+}
+
+.footerLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.footerLink {
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.footerLink:hover {
+  color: var(--primary-color);
+  text-decoration: underline;
+}
+
+.copyright {
+  font-weight: 500;
+}
