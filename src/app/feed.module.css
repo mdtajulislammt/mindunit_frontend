@@ -56,6 +56,30 @@
   to { transform: rotate(360deg); }
 }
 
+.leftSidebarWrapper {
+  position: sticky;
+  top: 88px;
+  max-height: calc(100vh - 108px);
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+}
+
+.leftSidebarWrapper::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.rightSidebarWrapper {
+  position: sticky;
+  top: 88px;
+  max-height: calc(100vh - 108px);
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+}
+
+.rightSidebarWrapper::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
 @media (max-width: 992px) {
   .mainLayout {
     grid-template-columns: 240px 1fr;

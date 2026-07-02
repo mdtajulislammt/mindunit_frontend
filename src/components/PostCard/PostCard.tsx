@@ -15,6 +15,8 @@ interface PostCardProps {
 export default function PostCard({ post }: PostCardProps) {
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [likesModalOpen, setLikesModalOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
 
   const dispatch = useDispatch();
   const { currentUser, users } = useSelector((state: RootState) => state.auth);
@@ -78,12 +80,36 @@ export default function PostCard({ post }: PostCardProps) {
         </div>
       </div>
 
-      {/* Content Text */}
-      <p className={styles.content}>{post.content}</p>
+      {/* Content Text - Truncated to 50 chars with ...more option */}
+      <p className={styles.content}>
+        {post.content.length > 50 && !isExpanded ? (
+          <>
+            {post.content.slice(0, 50)}...
+            <button
+              onClick={() => setIsExpanded(true)}
+              className={styles.moreBtn}
+            >
+              more
+            </button>
+          </>
+        ) : (
+          <>
+            {post.content}
+            {post.content.length > 50 && (
+              <button
+                onClick={() => setIsExpanded(false)}
+                className={styles.moreBtn}
+              >
+                less
+              </button>
+            )}
+          </>
+        )}
+      </p>
 
       {/* Content Image (if uploaded) */}
       {post.imageUrl && (
-        <div className={styles.imageContainer}>
+        <div className={styles.imageContainer} onClick={() => setImageModalOpen(true)}>
           <img src={post.imageUrl} alt="Post Attachment" className={styles.postImage} />
         </div>
       )}
@@ -147,6 +173,18 @@ export default function PostCard({ post }: PostCardProps) {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full-Screen Image Lightbox Modal */}
+      {imageModalOpen && (
+        <div className={styles.modalOverlay} onClick={() => setImageModalOpen(false)}>
+          <div className={styles.imageModalContent} onClick={(e) => e.stopPropagation()}>
+            <button className={styles.imageCloseBtn} onClick={() => setImageModalOpen(false)}>
+              <X size={20} />
+            </button>
+            <img src={post.imageUrl} alt="Post Attachment Full" className={styles.fullImage} />
           </div>
         </div>
       )}
