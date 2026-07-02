@@ -112,7 +112,7 @@ export default function Header() {
                 className={styles.dropdownItem}
                 onClick={() => {
                   setDropdownOpen(false);
-                  alert("Profile page coming soon!");
+                  router.push("/profile");
                 }}
               >
                 <UserIcon size={16} />
