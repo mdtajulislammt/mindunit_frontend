@@ -6,7 +6,9 @@ import {
   addCommentToPost, 
   toggleLikeComment, 
   addReplyToComment, 
-  toggleLikeReply 
+  toggleLikeReply,
+  deleteComment,
+  deleteReply
 } from "@/redux/slices/feedSlice";
 import { RootState } from "@/redux/store";
 import styles from "./Comments.module.css";
@@ -65,6 +67,18 @@ export default function Comments({ postId, comments }: CommentsProps) {
     );
     setReplyText("");
     setActiveReplyId(null);
+  };
+
+  const handleDeleteComment = (commentId: string) => {
+    if (window.confirm("Are you sure you want to delete this comment?")) {
+      dispatch(deleteComment({ postId, commentId }) as any);
+    }
+  };
+
+  const handleDeleteReply = (commentId: string, replyId: string) => {
+    if (window.confirm("Are you sure you want to delete this reply?")) {
+      dispatch(deleteReply({ postId, commentId, replyId }) as any);
+    }
   };
 
   return (
@@ -143,6 +157,17 @@ export default function Comments({ postId, comments }: CommentsProps) {
                   >
                     Reply
                   </button>
+                  {comment.author.id === currentUser.id && (
+                    <>
+                      <span className={styles.time}>|</span>
+                      <button
+                        className={styles.actionBtn}
+                        onClick={() => handleDeleteComment(comment.id)}
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
                 </div>
 
                 {/* Indented Replies Section */}
@@ -151,7 +176,7 @@ export default function Comments({ postId, comments }: CommentsProps) {
                     {comment.replies.map((reply: any) => {
                       const isReplyLiked = reply.likes?.includes(currentUser.id);
                       return (
-                        <div key={reply.id} className={styles.replyItem}>
+                        <div key={reply.id} className={reply.id ? styles.replyItem : ""}>
                           <img
                             src={reply.author.avatarUrl}
                             alt={`${reply.author.firstName} ${reply.author.lastName}`}
@@ -186,6 +211,17 @@ export default function Comments({ postId, comments }: CommentsProps) {
                               >
                                 Like ({reply.likes?.length || 0})
                               </button>
+                              {reply.author.id === currentUser.id && (
+                                <>
+                                  <span className={styles.time}>|</span>
+                                  <button
+                                    className={styles.actionBtn}
+                                    onClick={() => handleDeleteReply(comment.id, reply.id)}
+                                  >
+                                    Delete
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>

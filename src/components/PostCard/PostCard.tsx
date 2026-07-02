@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { ThumbsUp, MessageSquare, Globe, Lock, X } from "lucide-react";
-import { toggleLikePost, Post } from "@/redux/slices/feedSlice";
+import { ThumbsUp, MessageSquare, Globe, Lock, X, Edit3, Trash2 } from "lucide-react";
+import { toggleLikePost, updatePost, deletePost, Post } from "@/redux/slices/feedSlice";
 import { RootState } from "@/redux/store";
 import Comments from "../Comments/Comments";
 import styles from "./PostCard.module.css";
@@ -17,6 +17,10 @@ export default function PostCard({ post }: PostCardProps) {
   const [likesModalOpen, setLikesModalOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [imageModalOpen, setImageModalOpen] = useState(false);
+  
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(post.content);
+  const [editPrivacy, setEditPrivacy] = useState(post.privacy);
 
   const dispatch = useDispatch();
   const { currentUser, users } = useSelector((state: RootState) => state.auth);
@@ -42,6 +46,24 @@ export default function PostCard({ post }: PostCardProps) {
     if (hours > 0) return `${hours}h ago`;
     if (minutes > 0) return `${minutes}m ago`;
     return "just now";
+  };
+
+  const handleSaveEdit = () => {
+    if (!editContent.trim()) return;
+    dispatch(
+      updatePost({
+        id: post.id,
+        content: editContent,
+        privacy: editPrivacy,
+      }) as any
+    );
+    setIsEditing(false);
+  };
+
+  const handleDeletePost = () => {
+    if (window.confirm("Are you sure you want to delete this post?")) {
+      dispatch(deletePost(post.id) as any);
+    }
   };
 
   return (
@@ -78,34 +100,87 @@ export default function PostCard({ post }: PostCardProps) {
             </div>
           </div>
         </div>
+
+        {/* Author Actions (Edit / Delete) */}
+        {post.author.id === currentUser.id && (
+          <div className={styles.authorActions}>
+            <button
+              onClick={() => setIsEditing(true)}
+              className={styles.authorActionBtn}
+              title="Edit Post"
+            >
+              <Edit3 size={15} />
+            </button>
+            <button
+              onClick={handleDeletePost}
+              className={styles.authorActionBtnDanger}
+              title="Delete Post"
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Content Text - Truncated to 50 chars with ...more option */}
-      <p className={styles.content}>
-        {post.content.length > 50 && !isExpanded ? (
-          <>
-            {post.content.slice(0, 50)}...
-            <button
-              onClick={() => setIsExpanded(true)}
-              className={styles.moreBtn}
+      {isEditing ? (
+        <div className={styles.editForm}>
+          <textarea
+            className={styles.editTextarea}
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+          />
+          <div className={styles.editActions}>
+            <select
+              className={styles.editPrivacySelect}
+              value={editPrivacy}
+              onChange={(e) => setEditPrivacy(e.target.value as "public" | "private")}
             >
-              more
-            </button>
-          </>
-        ) : (
-          <>
-            {post.content}
-            {post.content.length > 50 && (
+              <option value="public">🌐 Public</option>
+              <option value="private">🔒 Private</option>
+            </select>
+            <div className={styles.editButtonGroup}>
+              <button onClick={handleSaveEdit} className={styles.saveBtn}>Save</button>
               <button
-                onClick={() => setIsExpanded(false)}
+                onClick={() => {
+                  setIsEditing(false);
+                  setEditContent(post.content);
+                  setEditPrivacy(post.privacy);
+                }}
+                className={styles.cancelBtn}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <p className={styles.content}>
+          {post.content.length > 50 && !isExpanded ? (
+            <>
+              {post.content.slice(0, 50)}...
+              <button
+                onClick={() => setIsExpanded(true)}
                 className={styles.moreBtn}
               >
-                less
+                more
               </button>
-            )}
-          </>
-        )}
-      </p>
+            </>
+          ) : (
+            <>
+              {post.content}
+              {post.content.length > 50 && (
+                <button
+                  onClick={() => setIsExpanded(false)}
+                  className={styles.moreBtn}
+                >
+                  less
+                </button>
+              )}
+            </>
+          )}
+        </p>
+      )}
 
       {/* Content Image (if uploaded) */}
       {post.imageUrl && (

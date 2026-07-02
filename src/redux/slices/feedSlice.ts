@@ -272,6 +272,126 @@ export const toggleLikeReply = createAsyncThunk(
   }
 );
 
+export const updatePost = createAsyncThunk(
+  "feed/updatePost",
+  async (
+    payload: { id: string; content?: string; privacy?: "public" | "private"; image?: string | null },
+    { getState, rejectWithValue }
+  ) => {
+    const state = getState() as any;
+    const token = state.auth.token;
+    if (!token) return rejectWithValue("No authentication token available");
+
+    try {
+      const formData = new FormData();
+      if (payload.content !== undefined) {
+        formData.append("content", payload.content);
+      }
+      if (payload.privacy !== undefined) {
+        formData.append("privacy", payload.privacy);
+      }
+      if (payload.image) {
+        const blob = dataURLtoBlob(payload.image);
+        formData.append("image", blob, "post_image_updated.png");
+      }
+
+      const response = await fetch(`${API_BASE}/posts/${payload.id}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        return rejectWithValue(data.message || "Failed to update post");
+      }
+      return data;
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Server error updating post");
+    }
+  }
+);
+
+export const deletePost = createAsyncThunk(
+  "feed/deletePost",
+  async (postId: string, { getState, rejectWithValue }) => {
+    const state = getState() as any;
+    const token = state.auth.token;
+    if (!token) return rejectWithValue("No authentication token available");
+
+    try {
+      const response = await fetch(`${API_BASE}/posts/${postId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return rejectWithValue(data.message || "Failed to delete post");
+      }
+      return postId;
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Server error deleting post");
+    }
+  }
+);
+
+export const deleteComment = createAsyncThunk(
+  "feed/deleteComment",
+  async (payload: { postId: string; commentId: string }, { getState, rejectWithValue }) => {
+    const state = getState() as any;
+    const token = state.auth.token;
+    if (!token) return rejectWithValue("No authentication token available");
+
+    try {
+      const response = await fetch(`${API_BASE}/comments/${payload.commentId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return rejectWithValue(data.message || "Failed to delete comment");
+      }
+      return { postId: payload.postId, commentId: payload.commentId };
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Server error deleting comment");
+    }
+  }
+);
+
+export const deleteReply = createAsyncThunk(
+  "feed/deleteReply",
+  async (
+    payload: { postId: string; commentId: string; replyId: string },
+    { getState, rejectWithValue }
+  ) => {
+    const state = getState() as any;
+    const token = state.auth.token;
+    if (!token) return rejectWithValue("No authentication token available");
+
+    try {
+      const response = await fetch(`${API_BASE}/replies/${payload.replyId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return rejectWithValue(data.message || "Failed to delete reply");
+      }
+      return { postId: payload.postId, commentId: payload.commentId, replyId: payload.replyId };
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Server error deleting reply");
+    }
+  }
+);
+
 const feedSlice = createSlice({
   name: "feed",
   initialState,
@@ -367,6 +487,40 @@ const feedSlice = createSlice({
                 reply.likes.splice(index, 1);
               }
             }
+          }
+        }
+      })
+
+      // Update Post
+      .addCase(updatePost.fulfilled, (state, action) => {
+        const index = state.posts.findIndex((p) => p.id === action.payload.id);
+        if (index !== -1) {
+          state.posts[index] = action.payload;
+        }
+      })
+
+      // Delete Post
+      .addCase(deletePost.fulfilled, (state, action) => {
+        state.posts = state.posts.filter((p) => p.id !== action.payload);
+      })
+
+      // Delete Comment
+      .addCase(deleteComment.fulfilled, (state, action) => {
+        const { postId, commentId } = action.payload;
+        const post = state.posts.find((p) => p.id === postId);
+        if (post) {
+          post.comments = post.comments.filter((c) => c.id !== commentId);
+        }
+      })
+
+      // Delete Reply
+      .addCase(deleteReply.fulfilled, (state, action) => {
+        const { postId, commentId, replyId } = action.payload;
+        const post = state.posts.find((p) => p.id === postId);
+        if (post) {
+          const comment = post.comments?.find((c) => c.id === commentId);
+          if (comment) {
+            comment.replies = comment.replies.filter((r) => r.id !== replyId);
           }
         }
       });
